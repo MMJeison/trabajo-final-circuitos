@@ -53,6 +53,21 @@ class TablaScreen(Screen):
     def __init__(self, **kwargs):
         super(TablaScreen, self).__init__(**kwargs)
         
+        # self.sensors = ["Humo", "Sísmico"]
+        self.sensors = {
+            "humo": {
+                "name": "Humo",
+                "value": 0,
+                "state": 0,
+                "labels": []
+            },
+            "seism": {
+                "name": "Sísmico",
+                "value": 0,
+                "state": 0,
+                "labels": []
+            }
+        }
         # Layout principal con márgenes
         main_layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
         
@@ -68,15 +83,14 @@ class TablaScreen(Screen):
             table_layout.add_widget(Label(text=header, bold=True))
         
         # Filas de datos
-        self.sensors = ["Humo", "Sísmico"]
-        self.labels = []
-        for sensor in self.sensors:
-            table_layout.add_widget(Label(text=sensor))
-            nivel_label = Label(text="0")  # Nivel inicial
-            estado_label = Label(text="Normal")  # Estado inicial
-            table_layout.add_widget(nivel_label)
+        # self.labels = []
+        for v in self.sensors.values():
+            table_layout.add_widget(Label(text=v['name']))
+            valor_label = Label(text=str(v['value']))  # Nivel inicial
+            estado_label = Label(text='Uknown')  # Estado inicial
+            table_layout.add_widget(valor_label)
             table_layout.add_widget(estado_label)
-            self.labels.append((nivel_label, estado_label))
+            v['labels'] = [valor_label, estado_label]
         
         # Botón de volver
         btn_volver = Button(
@@ -102,12 +116,11 @@ class TablaScreen(Screen):
 
     def actualizar_datos(self, dt):
         # Esta función simula la actualización de los datos
-        import random
-        for nivel_label, estado_label in self.labels:
-            nuevo_nivel = str(random.randint(0, 100))
-            nuevo_estado = "Alerta" if random.random() > 0.8 else "Normal"
-            nivel_label.text = nuevo_nivel
-            estado_label.text = nuevo_estado
+        # import random
+        for v in self.sensors.values():
+            labels = v['labels']
+            labels[0].text = str(v['value'])
+            labels[0].text = "Alerta" if v['value'] > 0.5 else "Normal"
 
     def cambiar_a_inicio(self, *args):
         self.manager.current = 'inicio'
