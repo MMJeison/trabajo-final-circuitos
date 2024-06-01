@@ -9,6 +9,54 @@ from kivy.uix.widget import Widget
 from kivy.uix.floatlayout import FloatLayout
 from kivy.clock import Clock
 
+import paho.mqtt.client as mqttc
+from paho.mqtt import publish
+from _thread import start_new_thread
+
+BROKER_URL = "192.168.1.4"
+BROKER_PORT = 1883
+
+class Publisher:
+    @staticmethod
+    def send_message(message, topic):
+        try:
+            print(topic, message, BROKER_URL)
+            publish.single(topic, message,
+                           hostname=BROKER_URL, port = BROKER_PORT)
+        except Exception as ex:
+            print("Error enviando un mensaje ex: {}".format(ex))
+            
+class Listener:
+
+    def __init__(self, observador, sensors):
+        self.client = mqttc.Client(mqttc.CallbackAPIVersion.VERSION1)
+        self.client.on_connect = self.on_connect
+        self.client.on_message = self.on_message
+        self.observador = observador
+        self.sensors = sensors
+        try:
+            self.client.connect(BROKER_URL, BROKER_PORT, 60)
+        except:
+            print("sin conexión al broker")
+
+    def start(self):
+        print('looping')
+        self.client.loop_forever()
+
+    def on_connect(self, client, userdata, flags, rc):
+        for v in self.sensors.values():
+            topic = v['topic']
+            print("Conectado ", str(rc), topic)
+            client.subscribe(topic)
+
+
+    def on_message(self, client, userdata, msg):
+        print("Mensaje recibido")
+        print("Message: {}".format(msg.payload.decode("utf-8")))
+        print(f'Topic: {msg.topic}')
+        # self.observador.procesarMensajeLuz(msg.payload.decode("utf-8"))
+        self.observador.procesarDato(msg.topic, msg.payload.decode("utf-8"))
+
 class InicioScreen(Screen):
     def __init__(self, **kwargs):
         super(InicioScreen, self).__init__(**kwargs)
@@ -58,18 +106,27 @@ class TablaScreen(Screen):
         self.sensors = {
             "humo": {
                 "name": "Humo",
+                "topic": "lab/sensors/humo",
                 "value": 0,
                 "state": 0,
                 "labels": []
             },
             "seism": {
                 "name": "Sísmico",
+                "topic": "lab/sensors/seism",
                 "value": 0,
                 "state": 0,
                 "labels": []
             }
         }
         # Layout principal con márgenes
+        
+        try:
+            listener = Listener(self, self.sensors)
+            start_new_thread(listener.start, ())
+        except:
+            print("Error al iniciar el listener")
+        
         main_layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
         
         # Título
@@ -133,14 +190,32 @@ class TablaScreen(Screen):
 
         # Simulación de actualización de datos cada 2 segundos
         Clock.schedule_interval(self.actualizar_datos, 2)
+        
+    def procesarDato(self, topic, message):
+        flag = False
+        for v in self.sensors.values():
+            if v['topic'] == topic:
+                try:
+                    v['value'] = float(message)
+                    v['state'] = 1 if float(message) > 50 else 0
+                    flag = True
+                except:
+                    print("Error al procesar el mensaje")
+                finally:
+                    break
+        if flag:
+            print("Procesado")
+        else:
+            print("Mensage No procesado")
 
     def actualizar_datos(self, dt):
         # Esta función simula la actualización de los datos
-        import random
+        # import random
+        
         for v in self.sensors.values():
             labels = v['labels']
-            labels[0].text = str(random.randint(0, 100))
-            labels[1].text = "Alerta" if random.random() > 0.5 else "Normal"
+            labels[0].text = str(v['value'])
+            labels[1].text = "Alerta" if v['state'] == 1 else "Normal"
 
     def cambiar_a_inicio(self, *args):
         self.manager.current = 'inicio'
