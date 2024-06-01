@@ -6,6 +6,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.videoplayer import VideoPlayer
 from kivy.uix.widget import Widget
+from kivy.uix.floatlayout import FloatLayout
 from kivy.clock import Clock
 
 class InicioScreen(Screen):
@@ -92,38 +93,60 @@ class TablaScreen(Screen):
             table_layout.add_widget(estado_label)
             v['labels'] = [valor_label, estado_label]
         
-        # Botón de volver
-        btn_volver = Button(
-            text="Volver", 
-            size_hint=(None, None), 
-            size=(100, 50),
-            background_color ='#76D7C4',
-            background_normal = '',
-            color = '#000000',
-            )
-        
         # Añadir widgets al layout principal
         main_layout.add_widget(titulo)
         main_layout.add_widget(table_layout)
-        main_layout.add_widget(btn_volver)
-        
+        # Layout flotante para botones
+        float_layout = FloatLayout()
+
+        # Botón de volver
+        btn_volver = Button(
+            text="Volver",
+            size_hint=(None, None),
+            size=(100, 50),
+            background_color='#76D7C4',
+            background_normal='',
+            color='#000000',
+            pos_hint={"x": 0.02, "y": 0.02}
+        )
+
+        # Botón de activar alarmas
+        btn_alarmas = Button(
+            text="Activar Alarmas",
+            size_hint=(None, None),
+            size=(140, 55),
+            background_color='#E74C3C',
+            background_normal='',
+            color='#FFFFFF',
+            pos_hint={"x": 0.75, "y": 0.02}
+        )
+
+        float_layout.add_widget(btn_volver)
+        float_layout.add_widget(btn_alarmas)
+
+        # Añadir layouts al screen
         self.add_widget(main_layout)
-        
+        self.add_widget(float_layout)
+
         btn_volver.bind(on_press=self.cambiar_a_inicio)
-        
+        btn_alarmas.bind(on_press=self.activar_alarmas)
+
         # Simulación de actualización de datos cada 2 segundos
         Clock.schedule_interval(self.actualizar_datos, 2)
 
     def actualizar_datos(self, dt):
         # Esta función simula la actualización de los datos
-        # import random
+        import random
         for v in self.sensors.values():
             labels = v['labels']
-            labels[0].text = str(v['value'])
-            labels[0].text = "Alerta" if v['value'] > 0.5 else "Normal"
+            labels[0].text = str(random.randint(0, 100))
+            labels[1].text = "Alerta" if random.random() > 0.5 else "Normal"
 
     def cambiar_a_inicio(self, *args):
         self.manager.current = 'inicio'
+
+    def activar_alarmas(self, *args):
+        print("¡Alarmas activadas!")
         
 
 class VideoScreen(Screen):
@@ -141,27 +164,49 @@ class VideoScreen(Screen):
         video = VideoPlayer(source='path_to_your_video.mp4', size_hint=(1, 1))
         video_layout.add_widget(video)
         
-        # Botón de volver
-        btn_volver = Button(
-            text="Volver", 
-            size_hint=(None, None), 
-            size=(100, 50),
-            background_color ='#76D7C4',
-            background_normal = '',
-            color = '#000000',
-            )
-        
         # Añadir widgets al layout principal
         main_layout.add_widget(titulo)
         main_layout.add_widget(video_layout)
-        main_layout.add_widget(btn_volver)
-        
+        # Layout flotante para botones
+        float_layout = FloatLayout()
+
+        # Botón de volver
+        btn_volver = Button(
+            text="Volver",
+            size_hint=(None, None),
+            size=(100, 50),
+            background_color='#76D7C4',
+            background_normal='',
+            color='#000000',
+            pos_hint={"x": 0.02, "y": 0.02}
+        )
+
+        # Botón de activar alarmas
+        btn_alarmas = Button(
+            text="Activar Alarmas",
+            size_hint=(None, None),
+            size=(140, 55),
+            background_color='#E74C3C',
+            background_normal='',
+            color='#FFFFFF',
+            pos_hint={"x": 0.75, "y": 0.02}
+        )
+
+        float_layout.add_widget(btn_volver)
+        float_layout.add_widget(btn_alarmas)
+
+        # Añadir layouts al screen
         self.add_widget(main_layout)
-        
+        self.add_widget(float_layout)
+
         btn_volver.bind(on_press=self.cambiar_a_inicio)
+        btn_alarmas.bind(on_press=self.activar_alarmas)
 
     def cambiar_a_inicio(self, *args):
         self.manager.current = 'inicio'
+
+    def activar_alarmas(self, *args):
+        print("¡Alarmas activadas!")
         
         
 class SecurityLab(App):
