@@ -9,6 +9,10 @@ from kivy.uix.widget import Widget
 from kivy.uix.floatlayout import FloatLayout
 from kivy.clock import Clock
 from datetime import datetime, timedelta
+import cv2
+from VideoStreamN import VideoStreamN
+from kivy.graphics.texture  import Texture
+from kivy.uix.image import Image
 
 import paho.mqtt.client as mqttc
 from paho.mqtt import publish
@@ -307,8 +311,8 @@ class VideoScreen(Screen):
         
         # Layout para el video
         video_layout = BoxLayout(size_hint=(1, 0.8))
-        video = VideoPlayer(source='path_to_your_video.mp4', size_hint=(1, 1))
-        video_layout.add_widget(video)
+        self.video_image = Image()
+        video_layout.add_widget(self.video_image)
         
         # Añadir widgets al layout principal
         main_layout.add_widget(titulo)
@@ -368,6 +372,21 @@ class VideoScreen(Screen):
             MyData.activatedAlarms = 0
             print("Eviado 0 a lab/alarm")
         
+    def on_enter(self, *args):
+        self.video_stream = VideoStreamN(src=0).start()
+        Clock.schedule_interval(self.update_video, 1.0 / 15.0)  # 30 FPS
+ 
+    def update_video(self, dt):
+        frame = self.video_stream.read()
+        if frame is not None:
+            buf = cv2.flip(frame, 0).tostring()
+            image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
+            image_texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
+            self.video_image.texture = image_texture
+ 
+    def on_leave(self, *args):
+        Clock.unschedule(self.update_video)
+        self.video_stream.stop()
         
 class SecurityLab(App):
     def build(self):
@@ -376,6 +395,12 @@ class SecurityLab(App):
         sm.add_widget(TablaScreen(name='tabla'))
         sm.add_widget(VideoScreen(name='video'))
         return sm
+    
+    def on_stop(self):
+        # Asegúrate de que todas las transmisiones se detengan cuando la aplicación se cierra
+        for screen in self.root.screens:
+            if isinstance(screen, VideoScreen):
+                screen.video_stream.stop()
 
 if __name__ == '__main__':
     SecurityLab().run()
