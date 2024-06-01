@@ -1,7 +1,7 @@
 import cv2
 from threading import Thread
 
-class VideoStream:
+class VideoStreamN:
     def __init__(self, src=0):
         self.src = src
         self.cap = None
